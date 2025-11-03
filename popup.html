@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Redirect Chain Solver</title>
+    <style>
+        /* CSS Kodlarınız (TÜM DÜZELTMELER UYGULANMIŞ VERSİYON - Son Buton İyileştirmeleri Dahil) */
+
+        /* Global box-sizing ayarı */
+        *, *:before, *:after {
+            box-sizing: border-box;
+        }
+
+        /* BODY VE GENİŞLİK AYARI (Geçmiş sekmesi için 480px) */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 14px;
+            min-width: 350px;
+            max-width: 480px; /* GENİŞLETİLDİ: 480px */
+            padding: 0;
+            margin: 0;
+            background-color: #eaf0f7; /* ANA ARKA PLAN RENGİ */
+        }
+
+        .container {
+            padding: 10px;
+        }
+
+        .message {
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .message.error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+
+        .message.success {
+            background-color: #d1fae5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        .message.info {
+            background-color: #e0f2fe;
+            color: #2563eb;
+            border: 1px solid #93c5fd;
+        }
+
+        /* GENEL BUTON STİLİ */
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease; /* Tüm geçişleri daha yumuşak yaptık */
+            font-size: 14px;
+            font-weight: 600; /* Hafif kalınlık ekledik */
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); /* Hafif gölge */
+        }
+
+        /* RENK PALETİ TANIMLARI (YENİ GRADYANLI VE PARLAK VERSİYONLAR) */
+
+        /* 1. ANA LACİVERT (PRIMARY) */
+        .btn-primary {
+            background: linear-gradient(145deg, #17236a, #0f184b); /* Koyu Lacivert Gradyan */
+            color: white;
+            box-shadow: 0 4px 6px rgba(23, 35, 106, 0.4); /* Derinlik veren gölge */
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(145deg, #283a8b, #17236a); /* Daha parlak hover */
+            box-shadow: 0 6px 10px rgba(23, 35, 106, 0.6);
+            transform: translateY(-1px);
+        }
+
+        /* 2. DANGER KIRMIZISI (LOGOUT) */
+        .btn-logout {
+            background: linear-gradient(145deg, #ef4444, #dc2626); /* Canlı Kırmızı Gradyan */
+            color: white;
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-logout:hover {
+            background: linear-gradient(145deg, #ff6b6b, #ef4444); /* Daha parlak hover */
+            box-shadow: 0 6px 10px rgba(239, 68, 68, 0.6);
+            transform: translateY(-1px);
+        }
+
+        /* 3. HIGHLIGHT SARI/ALTIN (UPGRADE) */
+        .btn-upgrade {
+            background: linear-gradient(145deg, #fcd34d, #facc15); /* Altın Sarı Gradyan */
+            color: #17236a;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(250, 204, 21, 0.5);
+        }
+
+        .btn-upgrade:hover {
+            background: linear-gradient(145deg, #fde07e, #fcd34d); /* Daha parlak hover */
+            box-shadow: 0 6px 10px rgba(250, 204, 21, 0.7);
+            transform: translateY(-1px);
+        }
+
+        /* 4. DETAY BUTONU (GRİ) */
+        .btn-detail {
+            background-color: #d1d5db;
+            color: #374151;
+            font-size: 12px;
+            padding: 4px 8px;
+            white-space: nowrap; /* Gör butonu tek satırda kalmalı */
+            display: inline-block;
+            box-shadow: none;
+            font-weight: 500;
+        }
+
+        .btn-detail:hover {
+            background-color: #9ca3af;
+            transform: none;
+        }
+
+        /* 5. İKİNCİL MOR-MAVİ (SECONDARY) */
+        .btn-secondary {
+            background: linear-gradient(145deg, #6366f1, #4f46e5); /* Mor-Mavi Gradyan */
+            color: white;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(145deg, #8183f6, #6366f1); /* Daha parlak hover */
+            box-shadow: 0 6px 10px rgba(79, 70, 229, 0.6);
+            transform: translateY(-1px);
+        }
+
+        /* AUTH STİLLERİ */
+        .auth-form-group {
+            display: flex;
+            flex-direction: column;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            padding: 0;
+        }
+
+        .auth-form-group input:not(:last-child),
+        .auth-form-group button:not(:last-child) {
+            margin-bottom: 10px;
+        }
+
+        .auth-form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+        }
+
+        .auth-form-group button {
+            width: 100%;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 2px solid #d1d5db;
+            margin-bottom: 0;
+        }
+
+        .auth-tab-button {
+            flex: 1;
+            padding: 10px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .auth-tab-button.active {
+            background-color: #ffffff;
+            color: #17236a;
+            border-bottom: 2px solid #17236a;
+        }
+
+        /* MAIN APP STİLLERİ */
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #d1d5db;
+        }
+
+        .header-main div {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        #user-info {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .app-container {
+            padding-top: 10px;
+        }
+
+        /* Uygulama Tabları */
+        .tab-button {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            background-color: #e5e7eb;
+            color: #374151;
+            border-radius: 6px 6px 0 0;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            background-color: #ffffff;
+            border-bottom: 1px solid #ffffff;
+        }
+
+        /* PREMIUM BUTON STİLİ */
+        .btn-premium {
+            /* Bootstrap varsayılanlarını ezmek */
+            color: #fff !important;
+            font-weight: bold !important;
+            border: none !important;
+
+            /* Premium Görünüm: Altın rengi ve Parlaklık Efekti */
+            background: linear-gradient(145deg, #ffcc00, #daa520) !important; /* Altından sarıya geçiş */
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.5) !important; /* Görünür gölge */
+            transition: all 0.3s ease !important;
+            padding: 10px 20px !important; /* Daha okunaklı ped */
+            border-radius: 6px !important; /* Hafif yuvarlatılmış köşeler */
+        }
+
+        /* Hover (Fare üzerine gelince) efekti */
+        .btn-premium:hover {
+            background: linear-gradient(145deg, #ffd700, #ffc400) !important; /* Daha parlak tonlar */
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.7) !important; /* Daha belirgin gölge */
+            transform: translateY(-1px); /* Hafif yukarı kaydırma */
+        }
+
+        /* Tıklandığında (Active) efekti */
+        .btn-premium:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(255, 204, 0, 0.3) !important;
+        }
+
+        /* Tarama Formları (Tekli ve Toplu) */
+        .scan-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .scan-form-group input, .scan-form-group textarea, .form-select {
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            width: 100%;
+        }
+
+        /* Butonlar */
+        #scan-form button[type="submit"] {
+            width: 100%;
+            align-self: unset;
+        }
+
+        /* TÜM LİNKLERİ TARA butonu genişliği düzeltmesi */
+        #scan-all-links-button {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        #bulk-scan-form button[type="submit"] {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        .url-input-group input {
+            flex-grow: 1;
+        }
+
+        /* TABLOLAR (Genel Ayarlar) */
+        #redirect-table, #history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        #redirect-table th, #history-table th {
+            background-color: #d1d5db;
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #9ca3af;
+        }
+
+        #redirect-table td, #history-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            word-break: break-all;
+        }
+
+        /* YENİ EKLEME: TEKLİ TARAMA TABLOSU (Esnek Kalmalı) */
+        #redirect-table {
+            table-layout: auto; /* Sütunlar içeriğe göre esner */
+        }
+
+        /* GEÇMİŞ TABLOSU (SABİT DÜZEN) */
+        #history-table {
+            table-layout: fixed; /* Sütunları sabitler */
+        }
+
+        .btn-delete {
+            background-color: #ef4444; /* Kırmızı renk */
+            color: white;
+            font-size: 12px;
+            padding: 4px 8px;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+
+        /* GEÇMİŞ TABLOSU SÜTUN GENİŞLİKLERİ */
+        #history-table th:nth-child(1), #history-table td:nth-child(1) {
+            width: 80px;
+        }
+
+        /* Tarih */
+        #history-table th:nth-child(3), #history-table td:nth-child(3) {
+            width: 60px;
+        }
+
+        /* Durum */
+        #history-table th:nth-child(4), #history-table td:nth-child(4) {
+            width: 60px;
+        }
+
+        /* Detay */
+
+        /* Statü Kodu Etiketleri */
+        .status-code-tag {
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .status-200 {
+            background-color: #d1fae5;
+            color: #059669;
+        }
+
+        .status-3xx {
+            background-color: #fef9c3;
+            color: #eab308;
+        }
+
+        .status-4xx {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .status-5xx {
+            background-color: #fbcfe8;
+            color: #db2777;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div style="text-align: center; margin-bottom: 20px; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
+        <img src="icons/icon48.png" alt="Logo" style="width: 48px; height: 48px; margin-bottom: 5px;">
+        <h2 style="margin: 0; font-size: 18px; color: #10b981;">Redirect Solver PRO</h2>
+    </div>
+    <div id="auth-section">
+        <div class="auth-tabs">
+            <button class="auth-tab-button active" id="login-tab">Giriş Yap</button>
+            <button class="auth-tab-button" id="register-tab">Kayıt Ol</button>
+        </div>
+
+        <div id="auth-message" class="message" style="display:none;"></div>
+
+        <form id="login-form" class="auth-form-group">
+            <input type="text" id="login-username" placeholder="Kullanıcı Adı" required>
+            <input type="password" id="login-password" placeholder="Şifre" required>
+            <button type="submit" class="btn btn-primary">Giriş</button>
+        </form>
+
+        <form id="register-form" class="auth-form-group" style="display:none;">
+            <input type="text" id="register-username" placeholder="Kullanıcı Adı" required>
+            <input type="password" id="register-password" placeholder="Şifre" required>
+            <button type="submit" class="btn btn-primary">Kayıt Ol</button>
+        </form>
+    </div>
+
+    <div id="main-app" style="display: none;">
+        <div class="header-main">
+            <div>
+                <div id="user-info"></div>
+                <div id="subscription-info"></div>
+                <button id="upgrade-button" class="btn btn-primary"
+                        style="margin-top: 10px; padding: 6px 10px; width: auto; font-size: 13px;">Hesabımı Yükselt
+                </button>
+            </div>
+            <button id="logout-button" class="btn btn-logout">Çıkış Yap</button>
+        </div>
+
+        <div class="app-container">
+            <div style="display: flex; margin-bottom: 10px;">
+                <button class="tab-button active" id="scan-tab">Tarama</button>
+                <button class="tab-button" id="history-tab">Geçmiş</button>
+                <button class="tab-button" id="bulk-tab" style="display:none;">Toplu Tarama</button>
+            </div>
+
+            <div id="scan-content">
+                <h3>URL Tarama</h3>
+                <form id="scan-form" class="scan-form-group">
+
+                    <div class="url-input-group">
+                        <input type="url" id="target-url" placeholder="http://taranacak-url.com" required>
+                        <button type="button" id="get-current-url-button" class="btn btn-secondary"
+                                title="Aktif sekmenin URL'sini al">
+                            URL'yi Al
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                        <label for="user-agent-select" style="font-size: 13px;">Tarama Tipi:</label>
+                        <select id="user-agent-select" class="form-select">
+                            <option value="default">Varsayılan (Uzantı)</option>
+                            <option value="desktop">Masaüstü Chrome (PREMIUM)</option>
+                            <option value="mobile">Mobil iPhone (PREMIUM)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="scan-button" class="btn btn-primary">Tara</button>
+                </form>
+
+                <button type="button" id="scan-all-links-button" class="btn btn-premium" style="display: none;">
+                    Tüm Linkleri Tara (PREMIUM)
+                </button>
+
+                <div id="scan-message" class="message" style="display:none;"></div>
+
+                <div id="full-scan-results-section" style="display: none;">
+                    <h3>Sayfa İçi Link Tarama Sonuçları</h3>
+                    <ul id="full-scan-summary-list">
+                    </ul>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 15px 0;">
+
+                <div id="scan-results-section" style="display:none;">
+                    <h4>Tarama Sonuçları</h4>
+                    <div id="scan-summary"></div>
+
+                    <table id="redirect-table">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Durum</th>
+                            <th>Gecikme</th>
+                            <th>URL</th>
+                            <th>Yönlendiriyor -></th>
+                            <th>Detaylar</th>
+                        </tr>
+                        </thead>
+                        <tbody id="redirect-table-body">
+                        </tbody>
+                    </table>
+
+                    <div id="premium-details-section"
+                         style="margin-top: 20px; display: none; background: #fff; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                        <h5><span id="detail-title">Adım Detayları</span></h5>
+                        <pre id="header-details"
+                             style="font-size: 11px; white-space: pre-wrap; word-break: break-all;"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bulk-scan-content" style="display: none;">
+                <h3>Toplu URL Tarama <span
+                        style="font-size: 10px; padding: 2px 5px; background: #eab308; color: white; border-radius: 4px;">PREMIUM</span>
+                </h3>
+
+                <form id="bulk-scan-form">
+                    <textarea id="bulk-urls" cols="48" rows="12"
+                              placeholder="Her satıra bir URL girin (Maks. 10 URL)"></textarea>
+                    <button type="submit" id="bulk-scan-button" class="btn btn-primary" style="margin-top: 10px;">Toplu
+                        Tara
+                    </button>
+                </form>
+
+                <div id="bulk-scan-message" class="message" style="display:none;"></div>
+
+                <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 15px 0;">
+
+                <div id="bulk-results-section" style="display:none;">
+                    <h4>Toplu Tarama Özeti</h4>
+                    <div id="bulk-summary-list"></div>
+                </div>
+            </div>
+
+            <div id="history-content" style="display: none;">
+                <div id="history-message" class="message error" style="display: none;"></div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 5px; margin-bottom: 10px;"
+                     id="history-actions">
+                    <button id="clear-history-button" class="btn btn-delete">Tümünü Temizle</button>
+                    <div id="export-buttons" style="display: flex; gap: 5px;">
+                        <button id="export-csv-button" class="btn btn-detail">CSV İndir</button>
+                        <button id="export-json-button" class="btn btn-detail">JSON İndir</button>
+                    </div>
+                </div>
+
+                <h4 style="color: #17236a; margin-bottom: 10px;">Tarama Geçmişi</h4>
+
+                <table id="history-table">
+                    <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>URL</th>
+                        <th>Durum</th>
+                        <th>Detay</th>
+                        <th style="width: 50px;">Sil</th>
+                    </tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="config.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>
